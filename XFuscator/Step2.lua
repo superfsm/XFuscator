@@ -2,7 +2,7 @@ return function(a, GenerateFluff, useTD)
     GenerateFluff = GenerateFluff or function() return "" end
     local a2 = ""
     math.randomseed(os and os.time() or tick())
-    local __X = math.random()
+    local __X = math.random(1, 9^9)
     a2 = [[ math.randomseed(]] .. __X .. [[)
 local ____
 ____ = { function(...) local t = { ...} return ____[8](t) end, print, game, math.frexp, math.random(1, 1100), string.dump, string.sub, table.concat, wait, tick, loadstring, "t", function(x) local x2 = loadstring(x) if x2 then return ____[tonumber("\50\48")](function() x2() end) else return nil end end, "InsertService", 1234567890, getfenv, "", "wai", 7.2, pcall, math.pi, "" }
