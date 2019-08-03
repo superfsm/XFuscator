@@ -12,26 +12,40 @@ XFuscator.EncryptStrings = require'XFuscator.StringEncryptor'
 XFuscator.Step2 = require'XFuscator.Step2'
 XFuscator.TamperDetection = require'XFuscator.TamperDetection'
 
-XFuscator.DumpString = function(x) 
-    --return concat("\"", x:gsub(".", function(d) return "\\" .. string.byte(d) end), "\"") 
-    return x:gsub(".", function(d) 
-        return "\\" .. d:byte()
-        --[[
-        local v = ""
-        local ch = string.byte(d)
-        -- other chars with values > 31 are '"' (34), '\' (92) and > 126
-        if ch < 32 or ch == 34 or ch == 92 or ch > 126 then
-            if ch >= 7 and ch <= 13 then
-                ch = string.sub("abtnvfr", ch - 6, ch - 6)
-            elseif ch == 34 or ch == 92 then
-                ch = string.char(ch)
+local replaces = {
+    a = "\a",
+    b = "\b",
+    f = "\f",
+    n = "\n",
+    r = "\r",
+    t = "\t",
+    v = "\v"
+}
+
+XFuscator.DumpString = function(x)
+    return x
+        :gsub( "\\(%D?)(%d?%d?%d?)", function( symbol, code )
+            if symbol ~= "" then
+                if symbol == "x" then
+                    return string.char( tonumber( "0x" .. code ) )
+                elseif symbol == "\\" then
+                    return "\\"
+                end
+
+                local rep = replaces[ symbol ]
+                if rep then
+                    return rep
+                end
+            elseif code ~= "" then
+                return string.char( tonumber( code ) )
             end
-            v = v .. "\\" .. ch
-        else-- 32 <= v <= 126 (NOT 255)
-            v = v .. string.char(ch)
-        end
-        return v]]
-    end)
+
+            return symbol .. code
+        end )
+
+        :gsub( ".", function( d )
+            return "\\" .. d:byte()
+        end )
 end
 
 local function obfuscate(code, level, mxLevel, useLoadstring, makeFluff, randomComments, step2, useUglifier, encryptConstants, useTD)
@@ -49,6 +63,8 @@ local function obfuscate(code, level, mxLevel, useLoadstring, makeFluff, randomC
         if makeFluff then
             return XFuscator.GenerateFluff()
         end
+
+        return ""
     end
     local dumpString = XFuscator.DumpString
     local concat = function(...) return table.concat({...}, "") end
@@ -97,14 +113,16 @@ local function obfuscate(code, level, mxLevel, useLoadstring, makeFluff, randomC
     if step2 == true then
         print("Step 2 ...")
         -- Convert to char/table/loadstring thing
-        a2 = XFuscator.Step2(a, GenerateFluff, useTD)
-    else
+        a2 = XFuscator.Step2(a, GenerateFluff, useTD) or a or ""
+    elseif useLoadstring then
         a2 = "return loadstring('" .. dumpString(a) .. "')()"
+    else
+        a2 = a or ""
     end
     
     if randomComments then
         print("Inserting unreadable and pointless comments ...")
-        a2 = XFuscator.RandomComments(a2)
+        a2 = XFuscator.RandomComments(a2) or a2 or a or ""
     end
     
     a2 = a2:gsub("\r+", " ")

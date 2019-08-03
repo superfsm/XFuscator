@@ -22,10 +22,10 @@ local Digits = lookupify{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
 local HexDigits = lookupify{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                             'A', 'a', 'B', 'b', 'C', 'c', 'D', 'd', 'E', 'e', 'F', 'f'}
 
-local Symbols = lookupify{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#'}
+local Symbols = lookupify{'+', '-', '*', '/', '^', '%', ',', '{', '}', '[', ']', '(', ')', ';', '#', '!=', '&&', '||'}
 
 local Keywords = lookupify{
-    'and', 'break', 'do', 'else', 'elseif',
+    'and', 'break', 'continue', 'do', 'else', 'elseif',
     'end', 'false', 'for', 'function', 'goto', 'if',
     'in', 'local', 'nil', 'not', 'or', 'repeat',
     'return', 'then', 'true', 'until', 'while',
@@ -152,6 +152,26 @@ function LexLua(src)
 			end
 		end
 
+		local function getCComment()
+			local start = p
+			while true do
+				local ch = peek()
+				if ch == "*" then
+					get()
+					ch = get()
+					if ch == "/" then
+						local comment = src:sub( start, p-1 )
+
+						return comment
+					end
+				elseif ch == "" then
+					return src:sub( start )
+				else
+					get()
+				end
+			end
+		end
+
 		--main token emitting loop
 		while true do
 			--get leading whitespace. The leading whitespace will include any comments
@@ -212,12 +232,33 @@ function LexLua(src)
 					leadingWhite = leadingWhite .. '--'
 					local _, wholeText = tryGetLongString()
 					if wholeText then
-						leadingWhite = leadingWhite..wholeText
+						leadingWhite = leadingWhite .. wholeText
                         longStr = true
 					else
 						while peek() ~= '\n' and peek() ~= '' do
-							leadingWhite = leadingWhite..get()
+							leadingWhite = leadingWhite .. get()
 						end
+					end
+				elseif c == '/' then
+					local c = peek(1)
+					if c == '*' then
+						get()
+						get()
+						leadingWhite = leadingWhite .. '/*'
+						local comment = getCComment()
+						if comment then
+							leadingWhite = leadingWhite .. comment
+							longStr = true
+						end
+					elseif c == '/' then
+						get()
+						get()
+						leadingWhite = leadingWhite .. '//'
+						while peek() ~= '\n' and peek() ~= '' do
+							leadingWhite = leadingWhite .. get()
+						end
+					else
+						break
 					end
 				else
 					break
@@ -327,6 +368,25 @@ function LexLua(src)
 					toEmit = {Type = 'Symbol', Data = '~='}
 				else
 					generateError("Unexpected symbol `~` in source.", 2)
+				end
+			elseif consume('!') then
+				if consume('=') then
+					toEmit = {Type = 'Symbol', Data = '~='}
+				else
+					toEmit = {Type = 'Keyword', Data = 'not'}
+				end
+			elseif consume('&') then
+				if consume('&') then
+					toEmit = {Type = 'Keyword', Data = 'and'}
+				else
+					generateError("Unexpected symbol `&` in source.", 2)
+				end
+
+			elseif consume('|') then
+				if consume('|') then
+					toEmit = {Type = 'Keyword', Data = 'or'}
+				else
+					generateError("Unexpected symbol `|` in source.", 2)
 				end
 
 			elseif consume('.') then
@@ -887,7 +947,7 @@ function ParseLua(src)
 	end
 
 
-	local unops = lookupify{'-', 'not', '#'}
+	local unops = lookupify{'-', 'not', '!', '#'}
 	local unopprio = 8
 	local priority = {
 		['+'] = {6,6};
@@ -901,10 +961,13 @@ function ParseLua(src)
 		['<'] = {3,3};
 		['<='] = {3,3};
 		['~='] = {3,3};
+		['!='] = {3,3};
 		['>'] = {3,3};
 		['>='] = {3,3};
 		['and'] = {2,2};
+		['&&'] = {2,2};
 		['or'] = {1,1};
+		['||'] = {1,1};
 	}
 	function ParseSubExpr(scope, level)
 		--base item, possibly with unop prefix
@@ -1234,6 +1297,11 @@ getWSAndComments()
 			local nodeBreak = {}
 			nodeBreak.AstType = 'BreakStatement'
 			stat = nodeBreak
+
+		elseif tok:ConsumeKeyword('continue') then
+			local nodeContinue = {}
+			nodeContinue.AstType = 'ContinueStatement'
+			stat = nodeContinue
 
 		elseif tok:ConsumeKeyword('goto') then
 			if not tok:Is('Ident') then

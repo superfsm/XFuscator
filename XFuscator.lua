@@ -22,7 +22,7 @@ printhi()
 
 local options = { 
     fluff = true,
-    useLoadstring = true,
+    loadstring = true,
     level = 1,
     mxLevel = 1,
     comments = false,
@@ -65,7 +65,7 @@ if arg and arg[1] then
         return
     end
     code = io.open(arg[1], 'rb'):read'*a'
-    outfn = arg[1]:sub(1, -5) .. " [Obfuscated].lua"
+    outfn = arg[1]:sub(1, -5) .. "_o.lua"
     local i = 2
     while i <= #arg do
     --for i = 2, #arg do

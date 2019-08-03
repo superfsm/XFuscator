@@ -238,6 +238,9 @@ function Format_Mini(ast)
 		elseif statement.AstType == 'BreakStatement' then
 			out = "break"
 
+		elseif statement.AstType == 'ContinueStatement' then
+			out = "continue"
+
 		elseif statement.AstType == 'RepeatStatement' then
 			out = "repeat"
 			out = joinStatementsSafe(out, formatStatlist(statement.Body))
@@ -304,9 +307,9 @@ function Format_Mini(ast)
 			out = joinStatementsSafe(out, formatStatlist(statement.Body))
             out = joinStatementsSafe(out, "end")
         elseif statement.AstType == 'LabelStatement' then
-            out = getIndentation() .. "::" .. statement.Label .. "::"
+            out = --[[getIndentation() ..]] "::" .. statement.Label .. "::"
         elseif statement.AstType == 'GotoStatement' then
-            out = getIndentation() .. "goto " .. statement.Label
+            out = --[[getIndentation() ..]] "goto " .. statement.Label
         elseif statement.AstType == 'Comment' then
             -- ignore
         else
