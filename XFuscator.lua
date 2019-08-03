@@ -1,11 +1,11 @@
 require'XFuscator.init'
 
-print(('-'):rep(79))
-print("------------------ XFUSCATOR - THE BEST LUA OBFUSCATOR 3V4R ------------------")
-print("------------------------ Copyright (C) 2012-2013 LoDC ------------------------")
-print("---------- Version 2.0 b1 : https://github.com/mlnlover11/XFuscator ----------")
-print(('-'):rep(79))
-print()
+-- print(('-'):rep(79))
+-- print("------------------ XFUSCATOR - THE BEST LUA OBFUSCATOR 3V4R ------------------")
+-- print("------------------------ Copyright (C) 2012-2013 LoDC ------------------------")
+-- print("---------- Version 2.0 b1 : https://github.com/mlnlover11/XFuscator ----------")
+-- print(('-'):rep(79))
+-- print()
 
 local code = [[
 local function printhi()
@@ -65,8 +65,8 @@ if arg and arg[1] then
         return
     end
     code = io.open(arg[1], 'rb'):read'*a'
-    outfn = arg[1]:sub(1, -5) .. "_o.lua"
-    local i = 2
+    outfn = arg[2]
+    local i = 3
     while i <= #arg do
     --for i = 2, #arg do
         local a = arg[i]:lower()
